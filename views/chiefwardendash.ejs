@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chief Warden Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .block-card {
+            transition: all 0.3s ease;
+        }
+        .block-card:hover {
+            transform: translateY(-5px);
+        }
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        .room-card {
+            transition: all 0.2s ease;
+        }
+        .room-card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .block-nav {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            backdrop-filter: blur(8px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="block-nav bg-white/80 border-b shadow-sm">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between py-4">
+                <h1 class="text-2xl font-bold text-gray-800">Chief Warden Dashboard</h1>
+                <button onclick="showAddBlockForm()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    Add New Block
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Blocks Section -->
+        <div class="space-y-8">
+            <% blocks.forEach(block => { 
+                const blockRooms = rooms.filter(room => room.blockId._id.toString() === block._id.toString());
+            %>
+                <div id="block-<%= block._id %>" class="block-card bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="bg-gradient-to-r from-purple-500 to-indigo-600 p-6">
+                        <div class="flex flex-wrap items-center justify-between gap-4">
+                            <h2 class="text-2xl font-bold text-white flex items-center">
+                                <i class="fas fa-building mr-3"></i>
+                                <%= block.name %>
+                            </h2>
+                            <div class="flex gap-4">
+                                <button onclick="showAddRoomForm('<%= block._id %>')" class="px-3 py-1 bg-white text-indigo-600 rounded-full text-sm font-medium hover:bg-indigo-100 transition-colors">
+                                    Add Room
+                                </button>
+                                <button onclick="removeBlock('<%= block._id %>')" class="px-3 py-1 bg-red-500 text-white rounded-full text-sm font-medium hover:bg-red-600 transition-colors">
+                                    Remove Block
+                                </button>
+                            </div>
+                        </div>
+                        <p class="text-indigo-100 mt-2 opacity-75"><%= block.description %></p>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="room-grid">
+                            <% blockRooms.forEach(room => { %>
+                                <div class="room-card bg-gray-50 rounded-lg p-4">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <div>
+                                            <h3 class="text-lg font-semibold text-gray-800">
+                                                Room <%= room.roomNumber %>
+                                            </h3>
+                                            <div class="flex gap-2 mt-1">
+                                                <span class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+                                                    <%= room.roomType %>
+                                                </span>
+                                                <span class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">
+                                                    <%= room.bathroomType %>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <button onclick="removeRoom('<%= room._id %>', '<%= block._id %>')" class="text-red-500 hover:text-red-600">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                    <div class="mt-2">
+                                        <p class="text-sm text-gray-600">Status: <%= room.status %></p>
+                                        <p class="text-sm text-gray-600">Occupied: <%= room.occupied %>/<%= room.roomType[0] %></p>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+
+    <!-- Add Block Modal -->
+    <div id="addBlockModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-lg max-w-md w-full mx-4 transform transition-all">
+            <div class="p-6 border-b">
+                <h2 class="text-2xl font-bold text-gray-800">Add New Block</h2>
+            </div>
+            <form id="addBlockForm" class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label for="blockName" class="block text-sm font-medium text-gray-700 mb-1">Block Name</label>
+                        <input type="text" id="blockName" name="name" required
+                               class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label for="blockDescription" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea id="blockDescription" name="description" rows="3"
+                                  class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="hideAddBlockForm()"
+                            class="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+                        Add Block
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Room Modal -->
+    <div id="addRoomModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-lg max-w-md w-full mx-4 transform transition-all">
+            <div class="p-6 border-b">
+                <h2 class="text-2xl font-bold text-gray-800">Add New Room</h2>
+            </div>
+            <form id="addRoomForm" class="p-6">
+                <input type="hidden" id="blockId" name="blockId">
+                <div class="space-y-4">
+                    <div>
+                        <label for="roomNumber" class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
+                        <input type="text" id="roomNumber" name="roomNumber" required
+                               class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label for="roomType" class="block text-sm font-medium text-gray-700 mb-1">Room Type</label>
+                        <select id="roomType" name="roomType" required
+                                class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="1-sharing">1-sharing</option>
+                            <option value="2-sharing">2-sharing</option>
+                            <option value="3-sharing">3-sharing</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="bathroomType" class="block text-sm font-medium text-gray-700 mb-1">Bathroom Type</label>
+                        <select id="bathroomType" name="bathroomType" required
+                                class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="attached">Attached</option>
+                            <option value="common">Common</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="hideAddRoomForm()"
+                            class="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+                        Add Room
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Add Block functionality
+        function showAddBlockForm() {
+            document.getElementById('addBlockModal').classList.remove('hidden');
+            document.getElementById('addBlockModal').classList.add('flex');
+        }
+
+        function hideAddBlockForm() {
+            document.getElementById('addBlockModal').classList.add('hidden');
+            document.getElementById('addBlockModal').classList.remove('flex');
+        }
+
+        document.getElementById('addBlockForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            try {
+                const response = await fetch('/chief/blocks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(Object.fromEntries(formData)),
+                });
+                if (response.ok) {
+                    hideAddBlockForm();
+                    location.reload();
+                } else {
+                    alert('Failed to add block');
+                }
+            } catch (error) {
+                alert('An error occurred while adding the block');
+            }
+        });
+
+        // Add Room functionality
+        function showAddRoomForm(blockId) {
+            document.getElementById('blockId').value = blockId;
+            document.getElementById('addRoomModal').classList.remove('hidden');
+            document.getElementById('addRoomModal').classList.add('flex');
+        }
+
+        function hideAddRoomForm() {
+            document.getElementById('addRoomModal').classList.add('hidden');
+            document.getElementById('addRoomModal').classList.remove('flex');
+        }
+
+        document.getElementById('addRoomForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            try {
+                const response = await fetch('/chief/rooms', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(Object.fromEntries(formData)),
+                });
+                if (response.ok) {
+                    hideAddRoomForm();
+                    location.reload();
+                } else {
+                    alert('Failed to add room');
+                }
+            } catch (error) {
+                alert('An error occurred while adding the room');
+            }
+        });
+
+        // Remove Block functionality
+        async function removeBlock(blockId) {
+            if (confirm('Are you sure you want to remove this block? This action cannot be undone.')) {
+                try {
+                    const response = await fetch(`/chief/blocks/${blockId}`, {
+                        method: 'DELETE',
+                    });
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Failed to remove block');
+                    }
+                } catch (error) {
+                    alert('An error occurred while removing the block');
+                }
+            }
+        }
+
+        // Remove Room functionality
+        async function removeRoom(roomId, blockId) {
+            if (confirm('Are you sure you want to remove this room? This action cannot be undone.')) {
+                try {
+                    const response = await fetch(`/chief/rooms/${roomId}`, {
+                        method: 'DELETE',
+                    });
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Failed to remove room');
+                    }
+                } catch (error) {
+                    alert('An error occurred while removing the room');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warden Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .block-card {
+            transition: all 0.3s ease;
+        }
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        .bed-slot {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .bed-slot:hover {
+            transform: scale(1.02);
+        }
+        .occupied-check {
+            animation: checkmark 0.3s ease-in-out forwards;
+        }
+        @keyframes checkmark {
+            0% { transform: scale(0); }
+            70% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        .block-nav {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            backdrop-filter: blur(8px);
+        }
+        .filter-active {
+            background-color: #3b82f6;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="block-nav bg-white/80 border-b shadow-sm">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center gap-4 overflow-x-auto py-2 whitespace-nowrap">
+                <% blocks.forEach(block => { %>
+                    <a href="#block-<%= block._id %>" 
+                       class="px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
+                        <%= block.name %>
+                    </a>
+                <% }) %>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header Section -->
+        <div class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+                <h1 class="text-4xl font-bold text-gray-800">Hostel Management</h1>
+                <p class="text-gray-600 mt-2">Warden Dashboard</p>
+            </div>
+            <div class="w-full sm:w-auto">
+                <div class="relative">
+                    <input type="text" 
+                           id="searchInput"
+                           placeholder="Search rooms or students..." 
+                           class="w-full sm:w-64 px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm p-6 flex items-center">
+                <div class="rounded-full bg-blue-100 p-3 mr-4">
+                    <i class="fas fa-building text-blue-600 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-gray-500 text-sm">Total Blocks</h3>
+                    <p class="text-2xl font-bold"><%= blocks.length %></p>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 flex items-center">
+                <div class="rounded-full bg-green-100 p-3 mr-4">
+                    <i class="fas fa-door-open text-green-600 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-gray-500 text-sm">Total Rooms</h3>
+                    <p class="text-2xl font-bold"><%= rooms.length %></p>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 flex items-center">
+                <div class="rounded-full bg-purple-100 p-3 mr-4">
+                    <i class="fas fa-users text-purple-600 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-gray-500 text-sm">Total Students</h3>
+                    <p class="text-2xl font-bold"><%= students.length %></p>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 flex items-center">
+                <div class="rounded-full bg-yellow-100 p-3 mr-4">
+                    <i class="fas fa-bed text-yellow-600 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-gray-500 text-sm">Available Beds</h3>
+                    <p class="text-2xl font-bold">
+                        <%= rooms.reduce((acc, room) => acc + (parseInt(room.roomType[0]) - room.occupied), 0) %>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Blocks Section -->
+        <div class="space-y-8">
+            <% blocks.forEach(block => { 
+                const blockRooms = rooms.filter(room => room.blockId._id.toString() === block._id.toString());
+                const totalBeds = blockRooms.reduce((acc, room) => acc + parseInt(room.roomType[0]), 0);
+                const occupiedBeds = blockRooms.reduce((acc, room) => acc + room.occupied, 0);
+            %>
+                <div id="block-<%= block._id %>" class="block-card bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-6">
+                        <div class="flex flex-wrap items-center justify-between gap-4">
+                            <h2 class="text-2xl font-bold text-white flex items-center">
+                                <i class="fas fa-building mr-3"></i>
+                                <%= block.name %>
+                            </h2>
+                            <div class="flex gap-4 text-blue-100">
+                                <div class="text-sm">
+                                    <span class="opacity-75">Rooms:</span>
+                                    <span class="font-semibold ml-1"><%= blockRooms.length %></span>
+                                </div>
+                                <div class="text-sm">
+                                    <span class="opacity-75">Occupancy:</span>
+                                    <span class="font-semibold ml-1"><%= occupiedBeds %>/<%= totalBeds %></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <!-- Room Type Filters -->
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <button class="room-filter filter-active px-3 py-1 rounded-full text-sm font-medium transition-colors"
+                                    data-filter="all">
+                                All Rooms
+                            </button>
+                            <button class="room-filter px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-sm transition-colors"
+                                    data-filter="1-sharing">
+                                1-sharing
+                            </button>
+                            <button class="room-filter px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-sm transition-colors"
+                                    data-filter="2-sharing">
+                                2-sharing
+                            </button>
+                            <button class="room-filter px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-sm transition-colors"
+                                    data-filter="3-sharing">
+                                3-sharing
+                            </button>
+                        </div>
+
+                        <!-- Rooms Grid -->
+                        <div class="room-grid">
+                            <% blockRooms.forEach(room => { %>
+                                <div class="room-card bg-gray-50 rounded-lg p-4" data-room-type="<%= room.roomType %>">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <div>
+                                            <h3 class="text-lg font-semibold text-gray-800">
+                                                Room <%= room.roomNumber %>
+                                            </h3>
+                                            <div class="flex gap-2 mt-1">
+                                                <span class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+                                                    <%= room.roomType %>
+                                                </span>
+                                                <span class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">
+                                                    <%= room.bathroomType %>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bed Slots -->
+                                    <div class="grid grid-cols-<%= room.roomType[0] %> gap-2">
+                                        <% for(let i = 0; i < parseInt(room.roomType[0]); i++) { %>
+                                            <% 
+                                            const student = students.find(s => 
+                                                s.roomId && 
+                                                s.roomId._id.toString() === room._id.toString() && 
+                                                students.filter(st => 
+                                                    st.roomId && 
+                                                    st.roomId._id.toString() === room._id.toString()
+                                                ).indexOf(s) === i
+                                            );
+                                            %>
+                                            <div class="bed-slot bg-white rounded-lg p-3 border <%= student ? 'border-green-200' : 'border-gray-200' %>"
+                                                 onclick="handleBedClick(this)"
+                                                 data-room-id="<%= room._id %>"
+                                                 data-bed-number="<%= i + 1 %>"
+                                                 data-is-occupied="<%= !!student %>"
+                                                 data-student-id="<%= student ? student._id : '' %>">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <span class="text-xs text-gray-500">Bed <%= i + 1 %></span>
+                                                    <% if(student) { %>
+                                                        <i class="fas fa-check-circle text-green-500 occupied-check"></i>
+                                                    <% } else { %>
+                                                        <i class="far fa-circle text-gray-300"></i>
+                                                    <% } %>
+                                                </div>
+                                                <% if(student) { %>
+                                                    <div class="space-y-1">
+                                                        <p class="font-medium text-sm text-gray-800 truncate" title="<%= student.name %>">
+                                                            <%= student.name %>
+                                                        </p>
+                                                        <p class="text-xs text-gray-500"><%= student.rollNumber %></p>
+                                                    </div>
+                                                <% } else { %>
+                                                    <p class="text-xs text-gray-400">Click to allocate</p>
+                                                <% } %>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+
+    <!-- Allocation Modal -->
+    <div id="allocationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-lg max-w-4xl w-full mx-4 transform transition-all">
+        <div class="p-6 border-b">
+            <h2 class="text-2xl font-bold text-gray-800">Allocate Room</h2>
+            <p class="text-gray-600 text-sm mt-1">Enter student details to allocate bed</p>
+        </div>
+        <form id="allocationForm" class="p-6">
+            <input type="hidden" id="roomId" name="roomId">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <input type="text" id="name" name="name" required
+                           class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="rollNumber" class="block text-sm font-medium text-gray-700 mb-1">Roll Number</label>
+                    <input type="text" id="rollNumber" name="rollNumber" required
+                           class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="course" class="block text-sm font-medium text-gray-700 mb-1">Course</label>
+                    <input type="text" id="course" name="course" required
+                           class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="semester" class="block text-sm font-medium text-gray-700 mb-1">Semester</label>
+                    <input type="number" id="semester" name="semester" required min="1" max="8"
+                           class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="contact" class="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
+                    <input type="tel" id="contact" name="contact" required
+                           class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="parentName" class="block text-sm font-medium text-gray-700 mb-1">Parent's Name</label>
+                    <input type="text" id="parentName" name="parentName" required
+                           class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="parentContact" class="block text-sm font-medium text-gray-700 mb-1">Parent's Contact Number</label>
+                    <input type="tel" id="parentContact" name="parentContact" required
+                           class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="totalFee" class="block text-sm font-medium text-gray-700 mb-1">Total Fee</label>
+                    <input type="number" id="totalFee" name="totalFee" required min="0" step="0.01"
+                           class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" onclick="hideAllocationForm()"
+                        class="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+                    Allocate Bed
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+    <!-- Student Details Modal -->
+    <div id="studentDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-lg max-w-4xl w-full mx-4 transform transition-all">
+        <div class="p-6 border-b">
+            <h2 class="text-2xl font-bold text-gray-800">Student Details</h2>
+        </div>
+        <div id="studentDetails" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Student details will be populated here -->
+        </div>
+        <div class="p-6 border-t">
+            <h3 class="text-lg font-semibold mb-4">Fee Management</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <p class="text-sm text-gray-600">Total Fee: <span id="totalFeeDisplay"></span></p>
+                    <p class="text-sm text-gray-600">Paid Amount: <span id="paidAmountDisplay"></span></p>
+                    <p class="text-sm text-gray-600">Pending Amount: <span id="pendingAmountDisplay"></span></p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600">Last Payment Date: <span id="lastPaymentDateDisplay"></span></p>
+                </div>
+            </div>
+            <form id="feePaymentForm" class="space-y-4">
+                <input type="hidden" id="feeStudentId" name="studentId">
+                <div>
+                    <label for="paidAmount" class="block text-sm font-medium text-gray-700 mb-1">Payment Amount</label>
+                    <input type="number" id="paidAmount" name="paidAmount" required min="0" step="0.01"
+                           class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button type="submit"
+                        class="w-full px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors">
+                    Record Payment
+                </button>
+            </form>
+        </div>
+        <div class="p-6 border-t flex justify-between">
+            <button onclick="unallocateStudent(currentStudentId)"
+                    class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors">
+                Vacate Bed
+            </button>
+            <button onclick="hideStudentDetailsModal()"
+                    class="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+    <script>
+        // Room type filtering
+        document.querySelectorAll('.room-filter').forEach(button => {
+            button.addEventListener('click', () => {
+                // Update active filter button
+                document.querySelectorAll('.room-filter').forEach(btn => {
+                    btn.classList.remove('filter-active');
+                    btn.classList.add('bg-gray-100', 'text-gray-600');
+                });
+                button.classList.add('filter-active');
+                button.classList.remove('bg-gray-100', 'text-gray-600');
+
+                const filter = button.dataset.filter;
+                document.querySelectorAll('.room-card').forEach(room => {
+                    if (filter === 'all' || room.dataset.roomType === filter) {
+                        room.style.display = 'block';
+                    } else {
+                        room.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll('.room-card').forEach(room => {
+                const roomNumber = room.querySelector('h3').textContent.toLowerCase();
+                const studentNames = Array.from(room.querySelectorAll('.bed-slot p.font-medium'))
+                    .map(p => p.textContent.toLowerCase());
+                const studentRolls = Array.from(room.querySelectorAll('.bed-slot p.text-gray-500'))
+                    .map(p => p.textContent.toLowerCase());
+
+                if (roomNumber.includes(searchTerm) || 
+                    studentNames.some(name => name.includes(searchTerm)) ||
+                    studentRolls.some(roll => roll.includes(searchTerm))) {
+                    room.style.display = 'block';
+                } else {
+                    room.style.display = 'none';
+                }
+            });
+        });
+
+        // Modal functionality
+        function showAllocationForm(roomId) {
+            document.getElementById('roomId').value = roomId;
+            document.getElementById('allocationModal').classList.remove('hidden');
+            document.getElementById('allocationModal').classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideAllocationForm() {
+            document.getElementById('allocationModal').classList.add('hidden');
+            document.getElementById('allocationModal').classList.remove('flex');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Form submission
+        document.getElementById('allocationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            try {
+                const response = await fetch('/warden/allocate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(Object.fromEntries(formData)),
+                });
+                const result = await response.json();
+                if (result.success) {
+                    hideAllocationForm();
+                    location.reload();
+                } else {
+                    alert('Failed to allocate student: ' + result.message);
+                }
+            } catch (error) {
+                alert('An error occurred while allocating the student');
+            }
+        });
+
+        // Unallocation functionality
+        async function unallocateStudent(studentId) {
+            if (confirm('Are you sure you want to vacate this bed?')) {
+                try {
+                    const response = await fetch('/warden/unallocate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ studentId }),
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        hideStudentDetailsModal();
+                        location.reload();
+                    } else {
+                        alert('Failed to unallocate student: ' + result.message);
+                    }
+                } catch (error) {
+                    console.error('Error unallocating student:', error);
+                    alert('An error occurred while unallocating the student');
+                }
+            }
+        }
+
+        // Handle bed click
+        function handleBedClick(bedElement) {
+            const isOccupied = bedElement.dataset.isOccupied === 'true';
+            if (isOccupied) {
+                showStudentDetails(bedElement.dataset.studentId);
+            } else {
+                showAllocationForm(bedElement.dataset.roomId);
+            }
+        }
+
+        let currentStudentId;
+
+        // Show student details
+        async function showStudentDetails(studentId) {
+            try {
+                const response = await fetch(`/warden/student/${studentId}`);
+                const student = await response.json();
+        
+                currentStudentId = studentId;
+        
+                const detailsHtml = `
+                    <div>
+                        <p><strong>Name:</strong> ${student.name}</p>
+                        <p><strong>Roll Number:</strong> ${student.rollNumber}</p>
+                        <p><strong>Course:</strong> ${student.course}</p>
+                        <p><strong>Semester:</strong> ${student.semester}</p>
+                    </div>
+                    <div>
+                        <p><strong>Contact:</strong> ${student.contact}</p>
+                        <p><strong>Parent's Name:</strong> ${student.parentName}</p>
+                        <p><strong>Parent's Contact:</strong> ${student.parentContact}</p>
+                        <p><strong>Room Number:</strong> ${student.roomId ? student.roomId.roomNumber : 'N/A'}</p>
+                    </div>
+                `;
+        
+                document.getElementById('studentDetails').innerHTML = detailsHtml;
+        
+                document.getElementById('feeStudentId').value = studentId;
+                document.getElementById('totalFeeDisplay').textContent = `₹${student.feeDetails.totalFee}`;
+                document.getElementById('paidAmountDisplay').textContent = `₹${student.feeDetails.paidAmount}`;
+                document.getElementById('pendingAmountDisplay').textContent = `₹${student.feeDetails.pendingAmount}`;
+                document.getElementById('lastPaymentDateDisplay').textContent = student.feeDetails.lastPaymentDate ? new Date(student.feeDetails.lastPaymentDate).toLocaleDateString() : 'N/A';
+        
+                document.getElementById('studentDetailsModal').classList.remove('hidden');
+                document.getElementById('studentDetailsModal').classList.add('flex');
+                document.body.style.overflow = 'hidden';
+            } catch (error) {
+                console.error('Error fetching student details:', error);
+                alert('An error occurred while fetching student details');
+            }
+        }
+
+        function hideStudentDetailsModal() {
+            document.getElementById('studentDetailsModal').classList.add('hidden');
+            document.getElementById('studentDetailsModal').classList.remove('flex');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Fee payment form submission
+        document.getElementById('feePaymentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            try {
+                const response = await fetch('/warden/updateFee', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(Object.fromEntries(formData)),
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('Payment recorded successfully');
+                    showStudentDetails(result.student._id); // Refresh student details
+                } else {
+                    alert('Failed to record payment: ' + result.message);
+                }
+            } catch (error) {
+                alert('An error occurred while recording the payment');
+            }
+        });
+
+        // Block navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const block = document.querySelector(this.getAttribute('href'));
+                const offset = 80;
+                const bodyRect = document.body.getBoundingClientRect().top;
+                const elementRect = block.getBoundingClientRect().top;
+                const elementPosition = elementRect - bodyRect;
+                const offsetPosition = elementPosition - offset;
+
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Active block highlighting
+        const observerOptions = {
+            root: null,
+            rootMargin: '-80px 0px 0px 0px',
+            threshold: 0
+        };
+
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                const id = entry.target.getAttribute('id');
+                const navLink = document.querySelector(`a[href="#${id}"]`);
+                
+                if (entry.isIntersecting) {
+                    document.querySelectorAll('.block-nav a').forEach(link => {
+                        link.classList.remove('bg-gray-100');
+                    });
+                    navLink?.classList.add('bg-gray-100');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.block-card').forEach((block) => {
+            observer.observe(block);
+        });
+    </script>
+</body>
+</html>
+
