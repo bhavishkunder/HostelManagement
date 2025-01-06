@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import chiefRoutes from './routes/chief.js';
 import wardenRoutes from './routes/warden.js';
+import securityRoutes from './routes/security.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,9 +21,10 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/chief', chiefRoutes);
 app.use('/warden', wardenRoutes);
+app.use('/security', securityRoutes);
 
 app.get('/', (req, res) => {
-  res.redirect('/chief/dashboard');
+  res.redirect('/security/dashboard');
 });
 
 const PORT = process.env.PORT || 3000;

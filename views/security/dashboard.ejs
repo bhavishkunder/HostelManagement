@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div id="app" class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-blue-600 text-white shadow-lg">
+            <div class="container mx-auto px-4 py-6">
+                <h1 class="text-3xl font-bold">Hostel Security Portal</h1>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-8">
+            <!-- Hostel Type Selection -->
+            <div class="mb-8 flex space-x-4">
+                <button 
+                    @click="hostelType = 'boys'"
+                    :class="{'bg-blue-600 text-white': hostelType === 'boys', 'bg-gray-200': hostelType !== 'boys'}"
+                    class="px-6 py-2 rounded-lg font-semibold transition-colors">
+                    Boys Hostel
+                </button>
+                <button 
+                    @click="hostelType = 'girls'"
+                    :class="{'bg-blue-600 text-white': hostelType === 'girls', 'bg-gray-200': hostelType !== 'girls'}"
+                    class="px-6 py-2 rounded-lg font-semibold transition-colors">
+                    Girls Hostel
+                </button>
+            </div>
+
+            <!-- Log Type Tabs -->
+            <div class="mb-8 border-b border-gray-200">
+                <nav class="-mb-px flex space-x-8">
+                    <button 
+                        @click="currentType = 'student'"
+                        :class="{'border-blue-600 text-blue-600': currentType === 'student'}"
+                        class="py-4 px-1 border-b-2 font-medium">
+                        Student Logs
+                    </button>
+                    <button 
+                        @click="currentType = 'staff'"
+                        :class="{'border-blue-600 text-blue-600': currentType === 'staff'}"
+                        class="py-4 px-1 border-b-2 font-medium">
+                        Staff Logs
+                    </button>
+                </nav>
+            </div>
+
+            <!-- New Log Form -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-4">Create New Log</h2>
+                <form @submit.prevent="createLog" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Name</label>
+                        <input v-model="newLog.name" required class="w-full p-2 border rounded">
+                    </div>
+                    <div v-if="currentType === 'student'">
+                        <label class="block text-sm font-medium mb-1">Semester</label>
+                        <input v-model="newLog.semester" required class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">
+                            {{ currentType === 'student' ? 'Exit' : 'Entry' }} Date
+                        </label>
+                        <input type="date" v-model="newLog.date" required class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">
+                            {{ currentType === 'student' ? 'Exit' : 'Entry' }} Time
+                        </label>
+                        <input type="time" v-model="newLog.time" required class="w-full p-2 border rounded">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium mb-1">Reason</label>
+                        <textarea v-model="newLog.reason" required class="w-full p-2 border rounded"></textarea>
+                    </div>
+                    <div class="md:col-span-2">
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                            Create Log
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Logs View Toggle -->
+            <div class="mb-4 flex justify-between items-center">
+                <div class="flex space-x-4">
+                    <button 
+                        @click="showCompleted = false"
+                        :class="{'bg-blue-600 text-white': !showCompleted, 'bg-gray-200': showCompleted}"
+                        class="px-4 py-2 rounded-lg font-semibold transition-colors">
+                        Pending Logs
+                    </button>
+                    <button 
+                        @click="showCompleted = true"
+                        :class="{'bg-blue-600 text-white': showCompleted, 'bg-gray-200': !showCompleted}"
+                        class="px-4 py-2 rounded-lg font-semibold transition-colors">
+                        Completed Logs
+                    </button>
+                </div>
+                <button 
+                    v-if="filteredLogs.length"
+                    @click="deleteAllLogs" 
+                    class="text-red-600 hover:text-red-800">
+                    Delete All {{ showCompleted ? 'Completed' : 'Pending' }} Logs
+                </button>
+            </div>
+
+            <!-- Logs Table -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                                <th v-if="currentType === 'student'" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Semester</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reason</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                    {{ currentType === 'student' ? 'Exit' : 'Entry' }} Date/Time
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                    {{ currentType === 'student' ? 'Return' : 'Exit' }} Date/Time
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr v-for="log in filteredLogs" :key="log._id">
+                                <td class="px-6 py-4 whitespace-nowrap">{{ log.name }}</td>
+                                <td v-if="currentType === 'student'" class="px-6 py-4 whitespace-nowrap">{{ log.semester }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">{{ log.reason }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {{ formatDateTime(currentType === 'student' ? log.exitTime : log.entryTime) }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <template v-if="log.status === 'completed'">
+                                        {{ formatDateTime(currentType === 'student' ? log.returnTime : log.exitTime) }}
+                                    </template>
+                                    <template v-else>
+                                        <div v-if="log.isUpdating">
+                                            <input 
+                                                type="datetime-local" 
+                                                v-model="log.updateDateTime"
+                                                class="border rounded px-2 py-1 mr-2"
+                                            >
+                                            <button 
+                                                @click="confirmUpdate(log)"
+                                                class="text-green-600 hover:text-green-900">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button 
+                                                @click="log.isUpdating = false"
+                                                class="text-red-600 hover:text-red-900 ml-2">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                        <button 
+                                            v-else
+                                            @click="startUpdate(log)"
+                                            class="text-blue-600 hover:text-blue-900">
+                                            Mark {{ currentType === 'student' ? 'Return' : 'Exit' }}
+                                        </button>
+                                    </template>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <button @click="deleteLog(log._id)"
+                                            class="text-red-600 hover:text-red-900">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr v-if="filteredLogs.length === 0">
+                                <td :colspan="currentType === 'student' ? 6 : 5" class="px-6 py-4 text-center text-gray-500">
+                                    No {{ showCompleted ? 'completed' : 'pending' }} logs found
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const { createApp } = Vue
+
+        createApp({
+            data() {
+                return {
+                    hostelType: 'boys',
+                    currentType: 'student',
+                    logs: [],
+                    showCompleted: false,
+                    newLog: {
+                        name: '',
+                        semester: '',
+                        reason: '',
+                        date: '',
+                        time: ''
+                    }
+                }
+            },
+            computed: {
+                filteredLogs() {
+                    return this.logs.filter(log => 
+                        (this.showCompleted && log.status === 'completed') ||
+                        (!this.showCompleted && log.status === 'pending')
+                    );
+                }
+            },
+            watch: {
+                hostelType: 'fetchLogs',
+                currentType: 'fetchLogs',
+                showCompleted: 'fetchLogs'
+            },
+            methods: {
+                async fetchLogs() {
+                    try {
+                        const response = await fetch(`/security/logs/${this.hostelType}/${this.currentType}`);
+                        this.logs = await response.json();
+                    } catch (error) {
+                        console.error('Error fetching logs:', error);
+                    }
+                },
+                async createLog() {
+                    try {
+                        const dateTime = new Date(`${this.newLog.date}T${this.newLog.time}`);
+                        
+                        const logData = {
+                            ...this.newLog,
+                            type: this.currentType,
+                            hostelType: this.hostelType,
+                        };
+
+                        if (this.currentType === 'student') {
+                            logData.exitTime = dateTime;
+                        } else {
+                            logData.entryTime = dateTime;
+                        }
+
+                        const response = await fetch('/security/logs', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(logData)
+                        });
+                        const newLog = await response.json();
+                        if (!this.showCompleted) {
+                            this.logs.unshift(newLog);
+                        }
+                        this.newLog = { name: '', semester: '', reason: '', date: '', time: '' };
+                    } catch (error) {
+                        console.error('Error creating log:', error);
+                    }
+                },
+                startUpdate(log) {
+                    log.isUpdating = true;
+                    log.updateDateTime = new Date().toISOString().slice(0, 16);
+                },
+                async confirmUpdate(log) {
+                    try {
+                        const updateTime = new Date(log.updateDateTime);
+                        const response = await fetch(`/security/logs/${log._id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                [this.currentType === 'student' ? 'returnTime' : 'exitTime']: updateTime
+                            })
+                        });
+                        const updatedLog = await response.json();
+                        const index = this.logs.findIndex(l => l._id === log._id);
+                        this.logs[index] = updatedLog;
+                    } catch (error) {
+                        console.error('Error updating log:', error);
+                    }
+                },
+                async deleteLog(id) {
+                    if (!confirm('Are you sure you want to delete this log?')) return;
+                    try {
+                        await fetch(`/security/logs/${id}`, {
+                            method: 'DELETE'
+                        });
+                        this.logs = this.logs.filter(log => log._id !== id);
+                    } catch (error) {
+                        console.error('Error deleting log:', error);
+                    }
+                },
+                async deleteAllLogs() {
+                    const status = this.showCompleted ? 'completed' : 'pending';
+                    if (!confirm(`Are you sure you want to delete all ${status} logs?`)) return;
+                    try {
+                        await fetch(`/security/logs/${this.hostelType}/${this.currentType}?status=${status}`, {
+                            method: 'DELETE'
+                        });
+                        this.logs = this.logs.filter(log => log.status !== status);
+                    } catch (error) {
+                        console.error('Error deleting logs:', error);
+                    }
+                },
+                formatDateTime(date) {
+                    return new Date(date).toLocaleString();
+                }
+            },
+            mounted() {
+                this.fetchLogs();
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>
+
