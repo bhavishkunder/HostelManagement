@@ -14,13 +14,10 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+
 const app = express();
 
-// Use the MongoDB connection string from the .env file
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+mongoose.connect('process.env.MONGO_URI');
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -38,6 +35,7 @@ app.get('/', (req, res) => {
 
 app.use('/student', studentRoutes);
 
+
 app.get('/', (req, res) => {
   res.redirect('/security/dashboard');
 });
@@ -46,3 +44,4 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+

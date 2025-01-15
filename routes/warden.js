@@ -33,7 +33,7 @@ router.get('/dashboard', async (req, res) => {
     const rooms = await Room.find().populate('blockId');
     const students = await Student.find().populate('roomId');
 
-    res.render('wardenDash', { blocks, rooms, students });
+    res.render('wardendash', { blocks, rooms, students });
   } catch (error) {
     res.status(500).send('Server Error');
   }
