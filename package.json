@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "start": "node app.js",
-    // Add these recommended scripts
+    
     "dev": "nodemon app.js",
     "build": "npm install"
   },
-  // Add these fields for better project documentation
+  
   "author": "",
   "license": "ISC",
   "description": "Hostel Management System",
@@ -20,7 +20,7 @@
     "node": "^23.5.0",
     "twilio": "^5.4.2"
   },
-  // Add this section for specifying Node version
+
   "engines": {
     "node": ">=18.0.0"
   }
