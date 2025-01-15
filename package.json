@@ -4,16 +4,24 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    // Add these recommended scripts
+    "dev": "nodemon app.js",
+    "build": "npm install"
   },
+  // Add these fields for better project documentation
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Hostel Management System",
   "dependencies": {
     "ejs": "^3.1.10",
     "express": "^4.21.2",
     "mongoose": "^8.9.3",
     "node": "^23.5.0",
     "twilio": "^5.4.2"
+  },
+  // Add this section for specifying Node version
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
