@@ -40,6 +40,7 @@
                 <button onclick="showAddBlockForm()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                     Add New Block
                 </button>
+                
             </div>
         </div>
     </div>
@@ -64,6 +65,9 @@
                                 <button onclick="removeBlock('<%= block._id %>')" class="px-3 py-1 bg-red-500 text-white rounded-full text-sm font-medium hover:bg-red-600 transition-colors">
                                     Remove Block
                                 </button>
+                                <button onclick="showWardenAllocationModal('<%= block._id %>')" class="px-3 py-1 bg-green-500 text-white rounded-full text-sm font-medium hover:bg-green-600 transition-colors">
+                                    Allocate Warden
+                                </button>                                
                             </div>
                         </div>
                         <p class="text-indigo-100 mt-2 opacity-75"><%= block.description %></p>
@@ -107,7 +111,7 @@
     <!-- Add Block Modal -->
     <div id="addBlockModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
         <div class="bg-white rounded-xl shadow-lg max-w-md w-full mx-4 transform transition-all">
-            <div class="p-6 border-b">
+            <div class="p-6 border-b">                                                                                                                   
                 <h2 class="text-2xl font-bold text-gray-800">Add New Block</h2>
             </div>
             <form id="addBlockForm" class="p-6">
@@ -136,6 +140,43 @@
             </form>
         </div>
     </div>
+
+    <!-- Add this to chiefwardendash.ejs -->
+<!-- Warden Allocation Modal -->
+<div id="wardenAllocationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-lg max-w-md w-full mx-4">
+        <div class="p-6 border-b">
+            <h2 class="text-2xl font-bold text-gray-800">Allocate Warden</h2>
+            <p class="text-gray-600 text-sm mt-1">Set warden credentials for block</p>
+        </div>
+        <form id="wardenAllocationForm" class="p-6">
+            <input type="hidden" id="wardenBlockId" name="blockId">
+            <div class="space-y-4">
+                <div>
+                    <label for="wardenName" class="block text-sm font-medium text-gray-700 mb-1">Warden Name</label>
+                    <input type="text" id="wardenName" name="wardenName" required
+                           class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="wardenPassword" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" id="wardenPassword" name="wardenPassword" required
+                           class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" onclick="hideWardenAllocationModal()"
+                        class="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+                    Allocate Warden
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 
     <!-- Add Room Modal -->
     <div id="addRoomModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
@@ -182,8 +223,53 @@
             </form>
         </div>
     </div>
+    
 
     <script>
+        // Add these functions to your existing <script> section
+
+// Show Warden Allocation Modal
+function showWardenAllocationModal(blockId) {
+    document.getElementById('wardenBlockId').value = blockId;
+    document.getElementById('wardenAllocationModal').classList.remove('hidden');
+    document.getElementById('wardenAllocationModal').classList.add('flex');
+}
+
+// Hide Warden Allocation Modal
+function hideWardenAllocationModal() {
+    document.getElementById('wardenAllocationModal').classList.add('hidden');
+    document.getElementById('wardenAllocationModal').classList.remove('flex');
+}
+
+// Add event listener for warden allocation form
+document.getElementById('wardenAllocationForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+    
+    try {
+        const response = await fetch('/chief/allocate-warden', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            hideWardenAllocationModal();
+            alert('Warden allocated successfully!');
+            location.reload();
+        } else {
+            alert('Failed to allocate warden: ' + (result.message || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('An error occurred while allocating the warden');
+        console.error(error);
+    }
+});
         // Add Block functionality
         function showAddBlockForm() {
             document.getElementById('addBlockModal').classList.remove('hidden');

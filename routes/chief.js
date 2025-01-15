@@ -80,6 +80,40 @@ router.delete('/rooms/:id', async (req, res) => {
     res.status(500).json({ success: false });
   }
 });
+router.post('/allocate-warden', async (req, res) => {
+  try {
+    const { blockId, wardenName, wardenPassword } = req.body;
+
+    // Store the password directly (not recommended in production)
+    await Block.findByIdAndUpdate(blockId, {
+      wardenName: wardenName,
+      wardenPassword: wardenPassword
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.post('/verify-warden', async (req, res) => {
+  try {
+    const { blockId, wardenName, wardenPassword } = req.body;
+    const block = await Block.findById(blockId);
+
+    if (!block || !block.wardenName || !block.wardenPassword) {
+      return res.json({ success: false, message: 'No warden assigned to this block' });
+    }
+
+    if (block.wardenName !== wardenName || block.wardenPassword !== wardenPassword) {
+      return res.json({ success: false, message: 'Invalid credentials' });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 export default router;
 

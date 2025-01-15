@@ -114,6 +114,18 @@
                     </p>
                 </div>
             </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 flex items-center">
+                <div class="rounded-full bg-red-100 p-3 mr-4">
+                    <i class="fas fa-envelope text-red-600 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-gray-500 text-sm">Message Parent</h3>
+                    <button onclick="showMessageModal()" 
+                            class="text-sm px-3 py-1 mt-1 rounded-full bg-red-600 text-white hover:bg-red-700 transition-colors">
+                        Send Message
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Blocks Section -->
@@ -138,6 +150,16 @@
                                 <div class="text-sm">
                                     <span class="opacity-75">Occupancy:</span>
                                     <span class="font-semibold ml-1"><%= occupiedBeds %>/<%= totalBeds %></span>
+                                </div>
+                                <div class="flex gap-4 text-blue-100">
+                                    <button onclick="showComplaints('<%= block._id %>')" 
+                                            class="text-sm px-3 py-1 rounded-full bg-blue-700 hover:bg-blue-800 transition-colors">
+                                        Complaints
+                                    </button>
+                                    <button onclick="showRequests('<%= block._id %>')"
+                                            class="text-sm px-3 py-1 rounded-full bg-blue-700 hover:bg-blue-800 transition-colors">
+                                        Leave Requests
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -344,8 +366,221 @@
         </div>
     </div>
 </div>
+<!-- Add this to wardenDash.ejs -->
+<!-- Warden Authentication Modal -->
+<div id="wardenAuthModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-lg max-w-md w-full mx-4">
+        <div class="p-6 border-b">
+            <h2 class="text-2xl font-bold text-gray-800">Warden Authentication</h2>
+            <p class="text-gray-600 text-sm mt-1">Please enter your credentials</p>
+        </div>
+        <form id="wardenAuthForm" class="p-6">
+            <input type="hidden" id="authBlockId" name="blockId">
+            <div class="space-y-4">
+                <div>
+                    <label for="authWardenName" class="block text-sm font-medium text-gray-700 mb-1">Warden Name</label>
+                    <input type="text" id="authWardenName" name="wardenName" required
+                           class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="authWardenPassword" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" id="authWardenPassword" name="wardenPassword" required
+                           class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" onclick="hideWardenAuthModal()"
+                        class="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+                    Authenticate
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<div id="complaintsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-lg max-w-4xl w-full mx-4">
+        <div class="p-6 border-b flex justify-between items-center">
+            <h2 class="text-2xl font-bold text-gray-800">Complaints</h2>
+            <button onclick="hideComplaintsModal()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-6 max-h-[70vh] overflow-y-auto">
+            <div id="complaintsList" class="space-y-4">
+                <!-- Complaints will be populated here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="requestsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-lg max-w-4xl w-full mx-4">
+        <div class="p-6 border-b flex justify-between items-center">
+            <h2 class="text-2xl font-bold text-gray-800">Leave Requests</h2>
+            <button onclick="hideRequestsModal()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-6 max-h-[70vh] overflow-y-auto">
+            <div id="requestsList" class="space-y-4">
+                <!-- Requests will be populated here -->
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Add this modal before the closing body tag -->
+<div id="messageModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-lg max-w-lg w-full mx-4">
+        <div class="p-6 border-b">
+            <h2 class="text-2xl font-bold text-gray-800">Message Parent</h2>
+            <p class="text-gray-600 text-sm mt-1">Send SMS to student's parent</p>
+        </div>
+        <form id="messageForm" class="p-6">
+            <div class="space-y-4">
+                <div>
+                    <label for="studentRoll" class="block text-sm font-medium text-gray-700 mb-1">Student Roll Number</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="studentRoll" name="studentRoll" required
+                               class="flex-1 px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500">
+                        <button type="button" onclick="searchStudent()"
+                                class="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
+                            Search
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="studentInfo" class="hidden bg-gray-50 rounded-lg p-4">
+                    <p class="font-medium">
+                        <span>Student Name: </span>
+                        <span id="studentNameValue"></span>
+                    </p>
+                    <p class="text-sm text-gray-600">
+                        <span>Parent Name: </span>
+                        <span id="parentNameValue"></span>
+                    </p>
+                    <p class="text-sm text-gray-600">
+                        <span>Parent Contact: </span>
+                        <span id="parentContactValue"></span>
+                    </p>
+                </div>
+
+                <div>
+                    <label for="messageText" class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                    <textarea id="messageText" name="messageText" required rows="4"
+                              class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500"></textarea>
+                    <p class="text-sm text-gray-500 mt-1">Maximum 160 characters</p>
+                </div>
+            </div>
+            
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" onclick="hideMessageModal()"
+                        class="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors">
+                    Send Message
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
     <script>
+        // Add these functions to your existing script section
+
+function showMessageModal() {
+    document.getElementById('messageModal').classList.remove('hidden');
+    document.getElementById('messageModal').classList.add('flex');
+    document.body.style.overflow = 'hidden';
+}
+
+function hideMessageModal() {
+    document.getElementById('messageModal').classList.add('hidden');
+    document.getElementById('messageModal').classList.remove('flex');
+    document.body.style.overflow = 'auto';
+    // Reset form
+    document.getElementById('messageForm').reset();
+    document.getElementById('studentInfo').classList.add('hidden');
+}
+
+async function searchStudent() {
+            const rollNumber = document.getElementById('studentRoll').value;
+            if (!rollNumber) {
+                alert('Please enter a roll number');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/warden/student-by-roll/${rollNumber}`);
+                const result = await response.json();
+                console.log('API Response:', result);
+                
+                if (result.success) {
+                    document.getElementById('studentNameValue').textContent = result.data.name;
+                    document.getElementById('parentNameValue').textContent = result.data.parentName;
+                    document.getElementById('parentContactValue').textContent = result.data.parentContact;
+                    document.getElementById('studentInfo').classList.remove('hidden');
+                } else {
+                    alert('Student not found');
+                    document.getElementById('studentInfo').classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error searching for student');
+            }
+        }
+
+        document.getElementById('messageForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const rollNumber = document.getElementById('studentRoll').value;
+            const messageText = document.getElementById('messageText').value;
+            const parentContact = document.getElementById('parentContactValue').textContent;
+            
+            console.log('Sending message:', { rollNumber, messageText, parentContact });
+
+            if (!rollNumber || !messageText) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            if (!parentContact) {
+                alert('Parent contact information is missing. Please search for the student first.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/warden/send-message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        rollNumber,
+                        messageText,
+                        parentContact
+                    }),
+                });
+                
+                const result = await response.json();
+                console.log('Response from server:', result);
+
+                if (result.success) {
+                    alert('Message sent successfully');
+                    document.getElementById('messageText').value = '';
+                } else {
+                    alert('Failed to send message: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                alert('Error sending message: ' + error.message);
+            }
+        });
         // Room type filtering
         document.querySelectorAll('.room-filter').forEach(button => {
             button.addEventListener('click', () => {
@@ -575,6 +810,187 @@
         document.querySelectorAll('.block-card').forEach((block) => {
             observer.observe(block);
         });
+
+        let authenticatedBlocks = new Set();
+
+function showWardenAuthModal(blockId) {
+    document.getElementById('authBlockId').value = blockId;
+    document.getElementById('wardenAuthModal').classList.remove('hidden');
+    document.getElementById('wardenAuthModal').classList.add('flex');
+}
+
+function hideWardenAuthModal() {
+    document.getElementById('wardenAuthModal').classList.add('hidden');
+    document.getElementById('wardenAuthModal').classList.remove('flex');
+}
+
+// Modify handleBedClick function
+async function handleBedClick(bedElement) {
+    const blockId = bedElement.closest('.block-card').id.replace('block-', '');
+    
+    if (!authenticatedBlocks.has(blockId)) {
+        showWardenAuthModal(blockId);
+        return;
+    }
+    
+    const isOccupied = bedElement.dataset.isOccupied === 'true';
+    if (isOccupied) {
+        showStudentDetails(bedElement.dataset.studentId);
+    } else {
+        showAllocationForm(bedElement.dataset.roomId);
+    }
+}
+
+document.getElementById('wardenAuthForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const blockId = formData.get('blockId');
+    
+    try {
+        const response = await fetch('/chief/verify-warden', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(Object.fromEntries(formData)),
+        });
+        const result = await response.json();
+        if (result.success) {
+            authenticatedBlocks.add(blockId);
+            hideWardenAuthModal();
+            // Retry the original action
+            const bedElement = document.querySelector(`#block-${blockId} .bed-slot[data-room-id="${currentRoomId}"]`);
+            if (bedElement) {
+                handleBedClick(bedElement);
+            }
+        } else {
+            alert('Authentication failed: ' + result.message);
+        }
+    } catch (error) {
+        alert('Authentication successful');
+    }
+});
+async function showComplaints(blockId) {
+    try {
+        const response = await fetch(`/warden/complaints/${blockId}`);
+        const complaints = await response.json();
+        
+        const complaintsHtml = complaints.map(complaint => `
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <p class="font-medium">${complaint.studentId.name}</p>
+                        <p class="text-sm text-gray-500">${complaint.complaintId}</p>
+                    </div>
+                    <select onchange="updateComplaintStatus('${complaint._id}', this.value)"
+                            class="px-2 py-1 rounded border ${complaint.status === 'resolved' ? 'bg-green-100' : 'bg-yellow-100'}">
+                        <option value="submitted" ${complaint.status === 'submitted' ? 'selected' : ''}>Submitted</option>
+                        <option value="resolved" ${complaint.status === 'resolved' ? 'selected' : ''}>Resolved</option>
+                    </select>
+                </div>
+                <p class="text-gray-700">${complaint.details}</p>
+                <p class="text-sm text-gray-500 mt-2">
+                    ${new Date(complaint.date).toLocaleDateString()}
+                </p>
+            </div>
+        `).join('');
+        
+        document.getElementById('complaintsList').innerHTML = complaintsHtml;
+        document.getElementById('complaintsModal').classList.remove('hidden');
+        document.getElementById('complaintsModal').classList.add('flex');
+    } catch (error) {
+        console.error('Error fetching complaints:', error);
+        alert('Failed to load complaints');
+    }
+}
+
+async function showRequests(blockId) {
+    try {
+        const response = await fetch(`/warden/requests/${blockId}`);
+        const requests = await response.json();
+        
+        const requestsHtml = requests.map(request => `
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <p class="font-medium">${request.studentId.name}</p>
+                        <p class="text-sm text-gray-500">${request.requestId}</p>
+                    </div>
+                    <select onchange="updateRequestStatus('${request._id}', this.value)"
+                            class="px-2 py-1 rounded border ${
+                                request.status === 'accepted' ? 'bg-green-100' : 
+                                request.status === 'rejected' ? 'bg-red-100' : 
+                                'bg-yellow-100'
+                            }">
+                        <option value="submitted" ${request.status === 'submitted' ? 'selected' : ''}>Submitted</option>
+                        <option value="accepted" ${request.status === 'accepted' ? 'selected' : ''}>Accepted</option>
+                        <option value="rejected" ${request.status === 'rejected' ? 'selected' : ''}>Rejected</option>
+                    </select>
+                </div>
+                <p class="text-gray-700">${request.reason}</p>
+                <p class="text-sm text-gray-500 mt-2">
+                    ${new Date(request.date).toLocaleDateString()}
+                </p>
+            </div>
+        `).join('');
+        
+        document.getElementById('requestsList').innerHTML = requestsHtml;
+        document.getElementById('requestsModal').classList.remove('hidden');
+        document.getElementById('requestsModal').classList.add('flex');
+    } catch (error) {
+        console.error('Error fetching requests:', error);
+        alert('Failed to load requests');
+    }
+}
+
+async function updateComplaintStatus(complaintId, status) {
+    try {
+        const response = await fetch('/warden/updateComplaint', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ complaintId, status }),
+        });
+        const result = await response.json();
+        if (!result.success) {
+            alert('Failed to update complaint status');
+        }
+    } catch (error) {
+        console.error('Error updating complaint:', error);
+        alert('Failed to update complaint status');
+    }
+}
+
+async function updateRequestStatus(requestId, status) {
+    try {
+        const response = await fetch('/warden/updateRequest', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ requestId, status }),
+        });
+        const result = await response.json();
+        if (!result.success) {
+            alert('Failed to update request status');
+        }
+    } catch (error) {
+        console.error('Error updating request:', error);
+        alert('Failed to update request status');
+    }
+}
+
+function hideComplaintsModal() {
+    document.getElementById('complaintsModal').classList.add('hidden');
+    document.getElementById('complaintsModal').classList.remove('flex');
+}
+
+function hideRequestsModal() {
+    document.getElementById('requestsModal').classList.add('hidden');
+    document.getElementById('requestsModal').classL
+    ist.remove('flex');
+}
     </script>
 </body>
 </html>

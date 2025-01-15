@@ -1,0 +1,159 @@
+<!-- Create this file as views/cleaning/dashboard.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Cleaning Dashboard - BMSIT Hostel</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+        <div class="container mx-auto px-4 py-6">
+            <h1 class="text-3xl font-bold text-center">Room Cleaning Dashboard</h1>
+            <div class="text-center mt-2 space-y-1">
+                <p class="text-xl">Daily Room Cleanliness Status</p>
+                <p class="text-yellow-200">Status resets automatically at 3:00 PM each day</p>
+                <p id="timeUntilReset" class="text-sm text-blue-200"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div id="passwordModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-lg p-6 w-96">
+            <h2 class="text-xl font-bold mb-4">Enter Password</h2>
+            <input type="password" id="cleaningPassword" class="w-full px-4 py-2 rounded border mb-4" placeholder="Enter password">
+            <div class="flex justify-end gap-3">
+                <button onclick="window.location.href='/'" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancel</button>
+                <button onclick="validatePassword()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content (Hidden until password verified) -->
+    <div id="mainContent" class="container mx-auto px-4 py-8 hidden">
+        <!-- Blocks Container -->
+        <div class="space-y-8">
+            <% blocks.forEach(block => { %>
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-2xl font-bold mb-4">Block: <%= block.name %></h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <% block.rooms.forEach(room => { %>
+                            <div class="border rounded-lg p-4">
+                                <h3 class="font-semibold mb-2">Room <%= room.roomNumber %></h3>
+                                <div class="flex items-center gap-4">
+                                    <button 
+                                        onclick="markCleaning('<%= room._id %>', true)"
+                                        class="px-3 py-1 rounded <%= room.cleaning ? 'opacity-50 cursor-not-allowed' : '' %> <%= room.cleaning && room.cleaning.isClean ? 'bg-green-500 text-white' : 'bg-gray-200' %>"
+                                        <%= room.cleaning ? 'disabled' : '' %>>
+                                        Clean
+                                    </button>
+                                    <button 
+                                        onclick="markCleaning('<%= room._id %>', false)"
+                                        class="px-3 py-1 rounded <%= room.cleaning ? 'opacity-50 cursor-not-allowed' : '' %> <%= room.cleaning && !room.cleaning.isClean ? 'bg-red-500 text-white' : 'bg-gray-200' %>"
+                                        <%= room.cleaning ? 'disabled' : '' %>>
+                                        Not Clean
+                                    </button>
+                                </div>
+                                <p class="text-sm text-gray-500 mt-2">
+                                    <% if (room.cleaning) { %>
+                                        Status: <span class="<%= room.cleaning.isClean ? 'text-green-600' : 'text-red-600' %>">
+                                            <%= room.cleaning.isClean ? 'Clean' : 'Not Clean' %>
+                                        </span>
+                                        <br>
+                                        Marked at: <%= new Date(room.cleaning.date).toLocaleTimeString() %>
+                                    <% } else { %>
+                                        Status: Not marked today
+                                    <% } %>
+                                </p>
+                            </div>
+                        <% }); %>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+    </div>
+<script>
+    (function() {
+        const resetTimeMs = <%= nextReset %>; // Ensures nextReset is passed correctly
+        let isVerified = false;
+
+        function showMainContent() {
+            document.getElementById('passwordModal').classList.add('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+            isVerified = true;
+            localStorage.setItem('cleaningVerified', 'true');
+        }
+
+        function hideMainContent() {
+            document.getElementById('passwordModal').classList.remove('hidden');
+            document.getElementById('mainContent').classList.add('hidden');
+            isVerified = false;
+            localStorage.removeItem('cleaningVerified');
+        }
+
+        function updateTimer() {
+            const now = new Date().getTime();
+            const timeLeft = resetTimeMs - now;
+
+            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+            document.getElementById('timeUntilReset').textContent = 
+                `Next reset in: ${hours}h ${minutes}m ${seconds}s`;
+
+            if (timeLeft <= 0) {
+                location.reload();
+            }
+        }
+
+        window.validatePassword = function() {
+            const password = document.getElementById('cleaningPassword').value;
+            if (password === 'cleanbmsit') {
+                showMainContent();
+            } else {
+                alert('Invalid password');
+            }
+        };
+
+        window.markCleaning = async function(roomId, isClean) {
+            if (!isVerified) {
+                hideMainContent();
+                return;
+            }
+
+            try {
+                const response = await fetch('/cleaning/mark', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ roomId, isClean, password: 'cleanbmsit' })
+                });
+
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Failed to update cleaning status');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to update cleaning status');
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const verified = localStorage.getItem('cleaningVerified');
+            if (verified === 'true') {
+                showMainContent();
+            }
+            setInterval(updateTimer, 1000);
+            updateTimer();
+        });
+    })();
+</script>
+
+</body>    
+</html>
