@@ -17,7 +17,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-mongoose.connect('process.env.MONGO_URI');
+mongoose.connect(process.env.MONGO_URI);
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
