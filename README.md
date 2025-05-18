@@ -6,11 +6,6 @@ Streamlines hostel operations for **students**, **wardens**, **chief wardens**, 
 
 ---
 
-![HOSTELMan Banner](https://user-images.githubusercontent.com/yourusername/hostelman-banner.png)  
-*Replace the above with your actual banner or screenshot*
-
----
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)  
 [![Node.js](https://img.shields.io/badge/Node.js-v18.x-brightgreen)](https://nodejs.org/)  
 [![MongoDB](https://img.shields.io/badge/MongoDB-v6.x-green)](https://www.mongodb.com/)  
@@ -23,16 +18,11 @@ Streamlines hostel operations for **students**, **wardens**, **chief wardens**, 
 
 - [✨ Features](#-features)  
 - [🗂 Project Structure](#-project-structure)  
-- [🖼️ Screenshots](#-screenshots)  
 - [⚙️ Installation](#-installation)  
 - [💻 Usage](#-usage)  
-- [🔑 Environment Variables](#-environment-variables)  
-- [📜 API Endpoints](#-api-endpoints)  
+- [🔑 Environment Variables](#-environment-variables) 
 - [🛠 Technologies Used](#-technologies-used)  
-- [🤝 Contributing](#-contributing)  
-- [📄 License](#-license)  
-- [📧 Contact](#-contact)
-
+- [📄 License](#-license) 
 ---
 
 ## ✨ Features
